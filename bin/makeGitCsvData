@@ -1,0 +1,46 @@
+#!/usr/bin/python
+
+# This script goes through a directory of git repositories
+# and generates CSV files with the log data.
+
+import glob
+import os, subprocess
+from datetime import date, timedelta
+
+directory = '.'
+start_date = '2019-03-31'
+end_date = '2020-04-01'
+
+csv_file = 'git_logs_' + start_date + '_to_' + end_date + '.csv'
+csv_file_path = os.path.join(os.path.abspath(directory), csv_file)
+if (os.path.exists(csv_file_path)):
+    os.remove(csv_file_path)
+
+pretty_format = '%h , %an, %cn, %ce, %ci, "%s", "%b"'
+
+# Add header to the csv file.
+cmd = 'echo "Commit ID, Project, Branch, Author, Author Email, Commiter, Commiter Email, Commit Date, Subject, Messsage" > ' + csv_file_path
+sp = subprocess.Popen(cmd, shell=True)
+rc = sp.wait()
+print(rc)
+
+git_base_cmd = 'git log ' + \
+		"--after='" + start_date + "' " + \
+                "--before='" + end_date + "' " 
+dir_contents  = glob.glob(os.path.abspath( directory + '/*'))
+for dir_item in dir_contents:
+    if os.path.isdir(dir_item):
+        os.chdir(dir_item)
+        print(os.getcwd())
+        
+        project_name = os.path.split(dir_item)[-1]
+        pretty_format="'%h, " + project_name + ', %t, %an, %ae, %cn, %ce, %ci, "%s", "%b"' + "'"
+        git_cmd = git_base_cmd + "--pretty=" + pretty_format + " >> " + csv_file_path
+        print(git_cmd)
+ 
+        sp = subprocess.Popen(git_cmd, shell=True)
+        rc = sp.wait()
+        print(rc)
+ 
+        
+
